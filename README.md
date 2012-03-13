@@ -173,7 +173,7 @@ aggregate rows is reasonable (as is typically the case), or you want to
 explicitly include zero-valued cells, use the normal `query` method for faster
 performance.
 
-*NOTE:* Dense queries are actually processed by the `dense_query` function. The
+*NOTE:* Dense queries are processed by the `dense_query` function. The
 `query` function is simply an alias for `dense_query`.
 
 ### Extensibility
