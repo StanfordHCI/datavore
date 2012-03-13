@@ -8,30 +8,7 @@ var dv = (function() {
  *
  * @namespace The top-level Datavore namespace, <tt>dv</tt>.
  */
-var dv = {};
-
-/**
- * Datavore major and minor version numbers.
- *
- * @namespace Datavore major and minor version numbers.
- */
-dv.version = {
-  /**
-   * The major version number.
-   *
-   * @type number
-   * @constant
-   */
-  major: 0,
-
-  /**
-   * The minor version number.
-   *
-   * @type number
-   * @constant
-   */
-  minor: 1
-};
+var dv = {version: "1.0.0"};
 
 dv.array = function(n) {
     var a = Array(n);
