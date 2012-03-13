@@ -88,7 +88,7 @@ number as arguments and returns a new Datavore table instance.
         return table.get("B", row) > 1;
     });
 
-**NOTE**: To ensure that tables created by various filtering queries are
+*NOTE*: To ensure that tables created by various filtering queries are
 compatible with each other, nominal and ordinal columns within the result
 tables will always have the same lookup table as the original table, even if
 some unique values have been completely filtered out. As a result you may
