@@ -6,7 +6,7 @@ analytics or visualization applications. Datavore consists of an in-memory
 column-oriented database implemented using standard JavaScript arrays. The
 system provides support for filtering and group-by aggregation queries. When
 run within an optimized JavaScript environment, Datavore can complete queries
-over million element data tables at interactive (sub-100ms) rates.
+over million-element data tables at interactive (sub-100ms) rates.
 
 ### Getting Started
 

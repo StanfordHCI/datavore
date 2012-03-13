@@ -1,6 +1,6 @@
 <html>
 <head>
-  <title>Profiler Benchmarks</title>
+  <title>Profiler Scatterplot Matrix</title>
   <script type="text/javascript" src="../../lib/d3.v2.min.js"></script>
   <script type="text/javascript" src="../../dv.js"></script>
   <script type="text/javascript" src="dv.profile.js"></script>
@@ -81,7 +81,7 @@ function datagen(opt) {
 }
 
 function run(opt) {
-    d3.select("div span").html("");
+    d3.selectAll("div span").html("");
     var data = datagen(opt),
         db = dv.profile(data),
         op = {bins:opt.bins, width:sz, height:sz};
