@@ -1,6 +1,6 @@
 # Datavore
 
-**Datavore** is a small, in-browser database engine written in JavaScript. 
+**Datavore** is a small in-browser database engine written in JavaScript.
 Datavore enables you to perform fast aggregation queries within web-based 
 analytics or visualization applications. Datavore consists of an in-memory
 column-oriented database implemented using standard JavaScript arrays. The
@@ -10,7 +10,7 @@ over million element data tables at interactive (sub-100ms) rates.
 
 ### Getting Started
 
-Simply include the file `dv.js` within your web page to import Datavore.
+Simply reference the script `dv.js` within your web page to import Datavore.
 The included example files include demonstrations of Datavore's functionality
 along with performance benchmarks. The `profile` example shows how Datavore
 can be used to support high-performance brushing and linking among
@@ -44,10 +44,11 @@ that can be aggregated (e.g., summed, averaged, etc). Nominal values are
 category labels without a meaningful sort order, while ordinal values can be 
 meaningfully sorted.
 
-Datavore treats nominal and ordinal data in a special way: it recodes the 
-input array values as zero-based integers. The unique values in the input
-array are sorted and placed into a lookup table. Mapping strings and other
-data types to integer codes enables faster query performance.
+Datavore treats nominal and ordinal data in a special way: it recodes the
+input array values as zero-based integers (much like a
+[star schema](http://en.wikipedia.org/wiki/Star_schema)). The unique values
+in the input array are sorted and placed into a lookup table. Mapping strings
+and other data types to integer codes enables faster query performance.
 
 ### Accessing Table Values
 
@@ -59,8 +60,8 @@ return coded integers. The `get` method always returns the original value.
     alert(tab1[0][1]);    // 1st column, 2nd row, coded   --> prints "0"
     alert(tab1.get(0,1)); // 1st column, 2nd row, uncoded --> prints "a"
 
-    // directly accessing a lookup table to decode value
-    // included for demo purposes only, use the "get" method instead!
+    // directly accessing the lookup table (lut) to decode a value
+    // included for demo purposes only; use the "get" method instead!
     // 1st column, 2nd row, uncoded --> prints "a"
     alert(tab1[0].lut[tab1[0][1]]);
 
@@ -80,7 +81,7 @@ Datavore tables support two kinds of queries: filtering operations and
 group-by aggregation. Filtering queries simply filter table contents
 according to a predicate function; these are similar to simple SQL queries
 with a WHERE clause. The filtering function takes a table instance and row
-number as arguments.
+number as arguments and returns a new Datavore table instance.
 
     // creates a new table with 3 rows: [["b","b","c"], [2,3,4]]
     var filtered_table = tab1.where(function(table, row) {
@@ -101,10 +102,10 @@ allow you to calculate counts, sums, averages, standard deviations, and minimum
 or maximum values for a column, optionally grouped according to nominal or
 ordinal dimensions. These queries are similar to SQL queries with group-by clauses.
 
-    // counts all rows in the table -> returns [[5]]
+    // count all rows in the table -> returns [[5]]
     var counts = tab1.query({vals:[dv.count()]});
 
-    // counts rows and sums values in 2nd column, grouped by 1st column
+    // count rows and sum values in 2nd column, grouped by 1st column
     // returns -> [["a","b","c"], [2,2,1], [1,5,4]]]
     var groups = tab1.query({dims:[0], vals:[dv.count(), dv.sum(1)]});
 
@@ -113,7 +114,7 @@ ordinal dimensions. These queries are similar to SQL queries with group-by claus
     // returns -> [[0,1,2], [2,2,1], [1,5,4]]]
     var uncode = tab1.query({dims:[0], vals:[dv.count(), dv.sum(1)], code:true});
 
-    // counts all table rows where first column != "a"
+    // count all table rows where first column != "a"
     // returns -> [["a","b","c"], [0,2,1]]
     var filter = tab1.query({dims:[0], vals:[dv.count()], where:
         function(table, row) { return table.get("A",row) != "a"; }
@@ -152,7 +153,7 @@ Datavore also supports a *sparse* representation that does not include rows
 for zero values. To use a sparse representation, use the `sparse_query`
 function, like so:
 
-    // sparse counts of all table rows where first column != "a"
+    // non-zero counts of all table rows where first column != "a"
     // returns -> [["b","c"], [2,1]]
     var sparse = tab1.sparse_query({dims:[0], vals:[dv.count()], where:
         function(table, row) { return table.get("A",row) != "a"; }
