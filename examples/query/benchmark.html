@@ -1,0 +1,59 @@
+<html>
+<head>
+    <title>Datavore Query Benchmarks</title>
+    <script type="text/javascript" src="../../lib/d3.v2.min.js"></script>
+    <script type="text/javascript" src="../../dv.js"></script>
+    <script type="text/javascript" src="generate_data.js"></script>
+    <style>
+html * { font-family: Monaco, Courier New; font-size: 10pt; }
+td { padding: 0; padding-right: 1em; }
+    </style>
+</head>
+<body>
+<table>
+</table>
+<script type="text/javascript">
+var __t__;
+function tick() { __t__ = Date.now(); }
+function tock(n) { return ((Date.now() - __t__)/1000).toFixed(n||3); }
+function out(n,s,v) {
+    var tr = d3.select("table").append("tr");
+    tr.append("td").html(n);
+    tr.append("td").html(s);
+    tr.append("td").html(v);
+}
+
+function benchmark(N) {
+    var ns = N<1000000 ? (N/1000)+"K" : (N/1000000)+"M";
+    
+    tick();
+    var data = generate_data(N);
+    out(ns, "init_data", tock());
+
+    // run filter query benchmark
+    tick();
+    data.where(function(table, row) {
+        return table[0][row] == "a";
+    });
+    out(ns, "where", tock());
+
+    // run aggregate query benchmarks
+    ["dense_query","sparse_query"].forEach(function(m) {
+        [["cnt",dv.count("x")], ["sum",dv.sum("x")]].forEach(function(v) {
+            tick();
+            data[m]({dims:[0,1], vals:[v[1]]}); // perform query
+            out(ns, m+"_"+v[0], tock());
+        });
+    });
+}
+
+// run benchmarks on varying table sizes
+out("rows","operation","time");
+[5e4,1e5,5e5,1e6,5e6].forEach(function(N) {
+    // setTimeout lets the web page update asynchronously
+    setTimeout(function() { benchmark(N); }, 10);
+});
+</script>
+
+</body>
+</html>

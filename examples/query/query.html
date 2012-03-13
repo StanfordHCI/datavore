@@ -1,0 +1,108 @@
+<html>
+<head>
+    <title>Datavore Query Examples</title>
+    <script type="text/javascript" src="../../lib/d3.v2.min.js"></script>
+    <script type="text/javascript" src="../../dv.js"></script>
+    <script type="text/javascript" src="generate_data.js"></script>
+    <style>
+html * { font-family: Monaco, Courier New; font-size: 10pt; }
+div { margin-bottom: 0.5em; }
+td { padding: 0; padding-right: 1em; }
+    </style>
+</head>
+<body>
+<table>
+</table>
+<script type="text/javascript">
+
+var data = generate_data(50000);
+var q = [
+    { // count number of rows, sum of 3rd column
+      desc: "count(*), sum(2)",
+      dims: [],
+      vals: [dv.count("*"), dv.sum(2)]
+    },
+    { // count number of rows, sum of 3rd column where 1st column is "a"
+      desc: "count(*), sum(2) where col(0)=='a'",
+      dims: [],
+      vals: [dv.count("*"), dv.sum(2)],
+      // note that raw table values (t[0][r]) may be encoded;
+      //  use "get" function to retrieve the original value
+      where: function(t,r) { return t.get(0, r) == "a"; }
+    },
+    { // compute descriptive statistics of 3rd column (by index)
+      desc: "min(2), max(2), avg(2), stdev(2)",
+      dims: [],
+      vals: [dv.min(2), dv.max(2), dv.avg(2), dv.stdev(2)]
+    },
+    { // compute descriptive statistics of 3rd column (by name)
+      // the result should be identical to the previous example
+      desc: "min(x), max(x), avg(x), stdev(x)",
+      dims:[],
+      vals:[dv.min("x"), dv.max("x"), dv.avg("x"), dv.stdev("x")]
+    },
+    { // count number of rows, grouped by 1st column
+      desc: "count(*) groupby 0",
+      dims: [0],
+      vals: [dv.count("*")]
+    },
+    { // count number of rows, grouped by 1st and 2nd column
+      desc: "count(*) groupby 0,1",
+      dims: [0,1],
+      vals: [dv.count("*")]
+    },
+    { // count number of rows, grouped by binned values of 3rd column
+      desc: "count(*) groupby bin(x).step(1000)",
+      dims: [dv.bin("x").step(1000)],
+      vals: [dv.count("*")]
+    },
+    { // count number of rows, grouped by binned values of 3rd column
+      // the result should be identical to the previous example
+      desc: "count(*) groupby bin(x, 1000)",
+      dims: [dv.bin("x", 1000)],
+      vals: [dv.count("*")]
+    },
+    { // count number of rows, grouped by binned values of 3rd column
+      desc: "count(*) groupby bin(x).step(2000).min(1000).max(8000)",
+      dims: [dv.bin("x").step(2000).min(1000).max(8000)],
+      vals: [dv.count("*")]
+    },
+    { // count number of rows, grouped by binned values of 3rd column
+      // the result should be identical to the previous example
+      desc: "count(*) groupby bin(x,2000,1000,8000)",
+      dims: [dv.bin("x", 2000, 1000, 8000)],
+      vals: [dv.count("*")]
+    },
+    { // average value of 3rd column, grouped by quintiles of 3rd column
+      desc: "avg(x) groupby quantile(x).bins(5)",
+      dims: [dv.quantile("x").bins(5)],
+      vals: [dv.avg("x")]
+    },
+    { // average value of 3rd column, grouped by quintiles of 3rd column
+      // the result should be identical to the previous example
+      desc: "avg(x) groupby quantile(x,5)",
+      dims: [dv.quantile("x",5)],
+      vals: [dv.avg("x")]
+    }
+];
+q.map(data.query).forEach(write);
+
+// uncomment to test sparse query executor
+// q.map(data.sparse_query).forEach(write);
+
+function write(result, idx) {
+    var div = d3.select("body").append("div");
+    div.append("strong").text(q[idx].desc);
+    var tab = div.append("table");
+    for (var i=0; i<result[0].length; ++i) {
+        var tr = tab.append("tr");
+        for (var j=0; j<result.length; ++j) {
+            tr.append("td").text(result[j][i]);
+        }
+    }
+}
+
+</script>
+
+</body>
+</html>

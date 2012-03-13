@@ -1,0 +1,140 @@
+<html>
+<head>
+  <title>Profiler Benchmarks</title>
+  <script type="text/javascript" src="../../lib/d3.v2.min.js"></script>
+  <script type="text/javascript" src="../../dv.js"></script>
+  <script type="text/javascript" src="dv.profile.js"></script>
+  <style type="text/css">
+svg {
+  border: 1px solid #ccc;
+  padding: 0px;
+  margin: 5px;
+}
+rect, rect.base {
+  fill: steelblue;
+}
+rect.brush {
+  fill: orange;
+}
+.left {
+  width: 315;
+  float: left;
+}
+  </style>
+</head>
+<body>
+<strong>Data Profiler Benchmarks</strong>
+<div>
+  <span id="d00"></span>
+  <span id="d01"></span>
+  <span id="d02"></span>
+  <span id="d03"></span>
+  <span id="d04"></span><br/>
+  <span id="d10"></span>
+  <span id="d11"></span>
+  <span id="d12"></span>
+  <span id="d13"></span>
+  <span id="d14"></span><br/>
+  <span id="d20"></span>
+  <span id="d21"></span>
+  <span id="d22"></span>
+  <span id="d23"></span>
+  <span id="d24"></span><br/>
+  <span id="d30"></span>
+  <span id="d31"></span>
+  <span id="d32"></span>
+  <span id="d33"></span>
+  <span id="d34"></span><br/>
+  <span id="d40"></span>
+  <span id="d41"></span>
+  <span id="d42"></span>
+  <span id="d43"></span>
+  <span id="d44"></span><br/>
+</div>
+<script type="text/javascript">
+function clear() {
+  d3.select("div span").html("");
+}
+
+var bd = [], data, s = 150;
+var sets = [
+    {N:10000,   bins:10, dim:3},
+    {N:10000,   bins:20, dim:3},
+    {N:10000,   bins:30, dim:3},
+    {N:100000,  bins:10, dim:3},
+    {N:100000,  bins:20, dim:3},
+    {N:100000,  bins:30, dim:3},
+    {N:1000000, bins:10, dim:3},
+    {N:1000000, bins:20, dim:3},
+    {N:1000000, bins:30, dim:3},
+    {N:10000,   bins:10, dim:4},
+    {N:10000,   bins:20, dim:4},
+    {N:10000,   bins:30, dim:4},
+    {N:100000,  bins:10, dim:4},
+    {N:100000,  bins:20, dim:4},
+    {N:100000,  bins:30, dim:4},
+    {N:1000000, bins:10, dim:4},
+    {N:1000000, bins:20, dim:4},
+    {N:1000000, bins:30, dim:4},
+    {N:10000,   bins:10, dim:5},
+    {N:10000,   bins:20, dim:5},
+    {N:10000,   bins:30, dim:5},
+    {N:100000,  bins:10, dim:5},
+    {N:100000,  bins:20, dim:5},
+    {N:100000,  bins:30, dim:5},
+    {N:1000000, bins:10, dim:5},
+    {N:1000000, bins:20, dim:5},
+    {N:1000000, bins:30, dim:5}
+];
+var si = -1;
+
+function datagen(opt) {
+    if (data && data.length==opt.dim && data[0].length==opt.N) {
+      return data;
+    }
+    
+    var idx = d3.range(opt.N);
+    var vals = idx.map(dv.rand.normal(10, 10))
+    var stats = {};
+    stats["a0"] = vals;
+    if (opt.dim > 1)
+      stats["a1"] = vals.map(function(d){return dv.rand.normal(10, 10)()});
+    if (opt.dim > 2)
+      stats["a2"] = vals.map(function(d){return dv.rand.normal(d,10)()});
+    if (opt.dim > 3)
+      stats["a3"] = vals.map(function(d){return Math.log(Math.abs(d)+1) + dv.rand.uniform(3)()});
+    if (opt.dim > 4)
+      stats["a4"] = vals.map(function(d){return dv.rand.normal(10, 10)()});
+
+    data = [];
+    for (var name in stats) {
+      data.push({name:name, values:stats[name], type:dv.type.numeric});
+    }
+    data = dv.table(data);
+    return data;
+}
+
+function next() {
+    if (sets[++si]) run(sets[si]);
+    else alert("Benchmarks complete. See console for timing data.");
+}
+
+function run(opt) {
+    clear();
+    var data = datagen(opt),
+        db = dv.profile(data),
+        op = {bins:opt.bins, width:s, height:s};
+    for (var i=0; i<data.length; ++i) for (var j=0; j<data.length; ++j) {
+        if (i == j) {
+            db.plot("histogram", ["d",i,j].join(""), [i], op);
+        } else {
+            db.plot("scatter", ["d",i,j].join(""), [j,i], op);
+        }
+    }
+    db.init();
+    bd.push(db.benchmark(next));
+}
+next();
+</script>
+</body>
+</html>
