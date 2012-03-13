@@ -5,8 +5,8 @@ Datavore enables you to perform fast aggregation queries within web-based
 analytics or visualization applications. Datavore consists of an in-memory
 column-oriented database implemented using standard JavaScript arrays. The
 system provides support for filtering and group-by aggregation queries. When
-run within a modern, optimized JavaScript environment, Datavore can complete 
-queries over million element data tables at interactive (sub-100ms) rates.
+run within an optimized JavaScript environment, Datavore can complete queries
+over million element data tables at interactive (sub-100ms) rates.
 
 ### Getting Started
 
@@ -14,15 +14,13 @@ Simply include the file `dv.js` within your web page to import Datavore.
 The included example files include demonstrations of Datavore's functionality
 along with performance benchmarks. The `profile` example shows how Datavore
 can be used to support high-performance brushing and linking among
-visualizations (using the [D3 http://github.com/mbostock/d3] visualization
-framework).
+visualizations using the [D3](http://github.com/mbostock/d3) framework.
 
 ### Creating A Datavore Table
 
-Datavore is a column-oriented database: a Datavore `table` is simply a 
-collection of data columns, each realized as a JavaScript array. To create a
-table instance, you can either add columns one-by-one or initialize the table
-in one shot. For instance:
+A Datavore table is simply a collection of data columns, each realized as a
+JavaScript array. To create a table instance, you can either initialize the
+full table through the constructor or add columns one-by-one. For instance:
 
     var colA = ["a","a","b","b","c"];
     var colB = [0,1,2,3,4];
@@ -40,8 +38,8 @@ in one shot. For instance:
     tab2.addColumn("B", colB, dv.type.numeric);
 
 In addition to the column name and array of values, each column must have a
-specified data type, one of {`dv.type.nominal, dv.type.ordinal, 
-dv.type.numeric, dv.type.unknown`}. Numeric means the column contains numbers
+specified data type, one of `dv.type.nominal`, `dv.type.ordinal`, 
+`dv.type.numeric`, or `dv.type.unknown`. Numeric means the column contains numbers
 that can be aggregated (e.g., summed, averaged, etc). Nominal values are
 category labels without a meaningful sort order, while ordinal values can be 
 meaningfully sorted.
@@ -57,31 +55,32 @@ You can access values within a Datavore table directly via array indices or
 through the table `get` method. For nominal or ordinal types, direct access will 
 return coded integers. The `get` method always returns the original value.
 
-    // both array indices and get method use (column, row) ordering
-    alert(tab1[0][1]); // 1st column, 2nd row, coded      --> prints "0"
+    // both array indices and the "get" method use (column, row) ordering
+    alert(tab1[0][1]);    // 1st column, 2nd row, coded   --> prints "0"
     alert(tab1.get(0,1)); // 1st column, 2nd row, uncoded --> prints "a"
 
-    // direct access of lookup table to decode value
+    // directly accessing a lookup table to decode value
+    // included for demo purposes only, use the "get" method instead!
     // 1st column, 2nd row, uncoded --> prints "a"
     alert(tab1[0].lut[tab1[0][1]]);
 
 You can either access columns by their numerical index (as above) or by name:
 
     // accessing table values by column name
-    alert(tab1["A"][1]); // 1st column, 2nd row, coded      --> prints "0"
+    alert(tab1["A"][1]);    // 1st column, 2nd row, coded   --> prints "0"
     alert(tab1.get("A",1)); // 1st column, 2nd row, uncoded --> prints "a"
 
-**WARNING**: Datavore column names must NOT be numbers. If you use column 
-names that JavaScript can interpret as integer values ("00") you may
+**WARNING**: *Datavore column names should NOT be numbers.* If you use column 
+names that JavaScript can interpret as integer values ("00") you will likely
 experience unexpected (and undesirable) behavior.
 
 ### Filtering Queries
 
 Datavore tables support two kinds of queries: filtering operations and
-group-by aggregating. Filtering queries simply filter table contents
+group-by aggregation. Filtering queries simply filter table contents
 according to a predicate function; these are similar to simple SQL queries
-with a WHERE clause. The filtering function should takes a table instance and
-row number as arguments.
+with a WHERE clause. The filtering function takes a table instance and row
+number as arguments.
 
     // creates a new table with 3 rows: [["b","b","c"], [2,3,4]]
     var filtered_table = tab1.where(function(table, row) {
@@ -92,25 +91,25 @@ row number as arguments.
 compatible with each other, nominal and ordinal columns within the result
 tables will always have the same lookup table as the original table, even if
 some unique values have been completely filtered out. As a result you may
-see some empty (zero) values returned when running dense aggregation queries
-on filtered tables.
+see some unexpected zero values returned when running dense aggregation
+queries on filtered tables.
 
 ### Aggregation Queries
 
 The primary use case for Datavore is running aggregation queries. These queries
-allow you to calculate counts, sums, averages, standard deviations, minimum and
-maximum values for a table, optionally grouped according to nominal or ordinal
-values. These queries are similar to SQL queries with group-by clauses.
+allow you to calculate counts, sums, averages, standard deviations, and minimum
+or maximum values for a column, optionally grouped according to nominal or
+ordinal dimensions. These queries are similar to SQL queries with group-by clauses.
 
     // counts all rows in the table -> returns [[5]]
-    var counts = tab1.query({dims:[], vals:[dv.count()]});
+    var counts = tab1.query({vals:[dv.count()]});
 
-    // counts all rows and sums values in column 2, grouped by column 1
+    // counts rows and sums values in 2nd column, grouped by 1st column
     // returns -> [["a","b","c"], [2,2,1], [1,5,4]]]
     var groups = tab1.query({dims:[0], vals:[dv.count(), dv.sum(1)]});
 
-    // same as before, but now with parameter code:true
-    // nominal/ordinal types are left as coded integers, not original values
+    // same as before, but now with extra parameter "code:true"
+    // nominal/ordinal types remain coded integers, NOT original values
     // returns -> [[0,1,2], [2,2,1], [1,5,4]]]
     var uncode = tab1.query({dims:[0], vals:[dv.count(), dv.sum(1)], code:true});
 
@@ -120,14 +119,26 @@ values. These queries are similar to SQL queries with group-by clauses.
         function(table, row) { return table.get("A",row) != "a"; }
     });
 
-Query requests are represented as standard JavaScript objects with up to four
-parameters. The **`dims`** parameter indicates the dimensions to group by. This
+The return value of the `query` method is an array of arrays. Note that the
+return value is *not* a Datavore table object. The input to the query method
+should be a JavaScript object with up to four parameters: `vals` (required),
+`dims`, `where`, and `code`.
+
+The `vals` parameter indicates the aggregation functions to run. The
+available operators are `dv.count`, `dv.sum`, `dv.min`, `dv.max`, `dv.avg`,
+`dv.variance`, and `dv.stdev`. All aggregation operators accept a single column
+index or name as input (except for `dv.count`, which ignores any input).
+
+The `dims` parameter indicates the dimensions to group by. This
 should be an array containing column indices, column names or special dimension
-query operators (`dv.bin` or `dv.quantile`). The **`vals`** parameter indicates
-the aggregation functions to run. The available operators are `dv.count`,
-`dv.sum`, `dv.min`, `dv.max`, `dv.avg`, `dv.variance`, and `dv.stdev`.
-All aggregation operators accept a single column index or name as input (except
-for `dv.count`, which ignores any input).
+query operators (`dv.bin` or `dv.quantile`).
+
+The `where` parameter specifies a predicate function for filtering the
+table (as in `where` queries). Filtering is performed *prior* to aggregation.
+
+If true, the `code` parameter indicates that nominal and ordinal values
+should be left as coded integers. If false (the default), coded integers are
+mapped back to the original values in the query result arrays.
 
 #### Dense Queries vs. Sparse Queries
 
@@ -147,22 +158,22 @@ function, like so:
         function(table, row) { return table.get("A",row) != "a"; }
     });
 
-So why the separation? Dense queries can be calculated faster -- by
-"materializing" the full dimensionality of the aggregated data one can
-use an array to store all the intermediate results. The sparse representation
-instead uses an associative array (a JavaScript object instance), which
-induces the overhead of object value lookups. On the other hand, dense queries
-with high dimensionality might result in very large result arrays, sometimes
-these can be too large to fit in the browser's memory footprint. So, if you
-are dealing with high-dimensionality aggregates (if the product of the set
-sizes of your group by dimensions is > 100,000 rows) you should consider
-using `sparse_query`. However, if the total number of aggregate rows is
-reasonable (as is typically the case) &mdash; or you want to explicitly
-represent zero-valued cells &mdash; use the normal `query` method for
-faster performance.
+So why the different query types? Dense queries can be calculated faster
+&ndash; by "materializing" the full dimensionality of the aggregated data one
+can use an array to store all the intermediate results. The sparse
+representation instead uses an associative array (a JavaScript object
+instance), which induces a higher overhead for object value lookups. On the
+other hand, dense queries over high-dimensional data can produce very large
+result arrays; sometimes these can be too large to fit in the browser's memory
+footprint. So, if you are dealing with high-dimensional aggregates (concretely,
+if the product of the set sizes of your group-by dimensions is > 100,000 rows)
+you should consider using `sparse_query`. However, if the total number of
+aggregate rows is reasonable (as is typically the case), or you want to
+explicitly include zero-valued cells, use the normal `query` method for faster
+performance.
 
-*NOTE:* The standard query function is actually implemented as `dense_query`.
-The `table.query` function is simply an alias for `dense_query`.
+*NOTE:* Dense queries are actually processed by the `dense_query` function. The
+`query` function is simply an alias for `dense_query`.
 
 ### Extensibility
 
@@ -170,9 +181,9 @@ Datavore can be extended with new dimensional and (with some effort)
 aggregate operators. To create your own dimensional operator, view the source
 code for `dv.bin` and `dv.quantile`, and follow their example. Adding new
 aggregate operators is possible but more complex. You will need to add a new
-module (following in the step of `dv.sum`, `dv.avg`, etc) and add new logic to
-the inner loop of the query processor (for both dense and sparse queries).
-*This is not for the faint of heart!* The query processor avoid making
-function calls within its inner loop. This helps make Datavore much faster,
-but at some cost to extensibility. You really do have to change the guts of
-the engine to add new aggregate operators.
+module (following in the foot steps of `dv.sum`, `dv.avg`, etc) and add new
+logic to the inner loop of the query processor (for both dense and sparse
+queries). *This is not for the faint of heart!* The query processor avoids
+making function calls within its inner loop &mdash; this helps make Datavore
+much faster, but at some cost to extensibility. You will have to modify the
+guts of the engine to add new aggregate operators.
