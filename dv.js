@@ -99,7 +99,7 @@ dv.table = function(input)
         }
         else
         {
-            _.each(vals, function(val){return table[name].push(val)});
+            vals.foreach(function(val){return table[name].push(val)});
         }
     };
     
