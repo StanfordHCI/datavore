@@ -92,8 +92,15 @@ dv.table = function(input)
         vals.index = table.length;
         vals.type = type;
 
-        table.push(vals);
-        table[name] = vals;
+        if(!table[name])
+        {
+            table.push(vals);
+            table[name] = vals;
+        }
+        else
+        {
+            vals.forEach(function(val){return table[name].push(val)});
+        }
     };
     
     table.removeColumn = function(col) {
