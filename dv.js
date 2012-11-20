@@ -93,7 +93,14 @@ dv.table = function(input)
         vals.type = type;
 
         table.push(vals);
-        _.each(vals, function(val){return table[name].push(val)});
+        if(!table[name])
+        {
+            table[name] = vals;
+        }
+        else
+        {
+            _.each(vals, function(val){return table[name].push(val)});
+        }
     };
     
     table.removeColumn = function(col) {
