@@ -94,11 +94,11 @@ dv.table = function(input)
 
         if(!table[name])
         {
+            table.push(vals);
             table[name] = vals;
         }
         else
         {
-            table.push(vals);
             _.each(vals, function(val){return table[name].push(val)});
         }
     };
