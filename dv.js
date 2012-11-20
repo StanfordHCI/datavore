@@ -97,7 +97,7 @@ dv.table = function(input)
         {
             table[name] = [];
         }
-        table[name].push(vals);
+        table[name].push(_.each(vals, function(val){return val}));
     };
     
     table.removeColumn = function(col) {
