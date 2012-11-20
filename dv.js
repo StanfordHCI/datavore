@@ -92,13 +92,13 @@ dv.table = function(input)
         vals.index = table.length;
         vals.type = type;
 
-        table.push(vals);
         if(!table[name])
         {
             table[name] = vals;
         }
         else
         {
+            table.push(vals);
             _.each(vals, function(val){return table[name].push(val)});
         }
     };
