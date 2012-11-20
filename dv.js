@@ -93,7 +93,11 @@ dv.table = function(input)
         vals.type = type;
 
         table.push(vals);
-        table[name] = vals;
+        if(!table[name])
+        {
+            table[name] = [];
+        }
+        table[name].push(vals);
     };
     
     table.removeColumn = function(col) {
