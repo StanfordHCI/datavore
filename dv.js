@@ -93,10 +93,6 @@ dv.table = function(input)
         vals.type = type;
 
         table.push(vals);
-        if(!table[name])
-        {
-            table[name] = [];
-        }
         _.each(vals, function(val){return table[name].push(val)});
     };
     
