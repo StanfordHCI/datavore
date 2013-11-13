@@ -101,7 +101,7 @@ dv.table = function(input)
         if (col != null) {
             delete table[col.name];
             table.splice(col.index, 1);
-            for(var i=col.index+1; i < table.length ; i++){
+            for(var i=col.index; i < table.length ; i++){
               table[i].index = i;
             }
         }
