@@ -137,14 +137,6 @@ dv.table = function(input)
                 }
             }
 
-            // If type is numeric, convert values into numbers
-            if (type === dv.type.numeric) {
-                len = values.length;
-                for (j = 0; j < len; j += 1) {
-                    values[j] = parseFloat(values[j]);
-                }
-            }
-
             // Get the array of possible values. It deletes duplicates, so that each value is present exactly one time.
             // Example: [0: 'tree', 1: 'food', 2: 'dog']
             vals.lut = code(values);
@@ -187,7 +179,7 @@ dv.table = function(input)
 
                     // If requested, convert the value to string
                     if (requestString) {
-                        result = result.toString();
+                        result = result !== null ? result.toString() : result;
                     }
                 } else {
                     result = [];
