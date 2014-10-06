@@ -8,7 +8,7 @@ var dv = (function() {
  *
  * @namespace The top-level Datavore namespace, <tt>dv</tt>.
  */
-var dv = {version: "1.0.0"};
+var dv = {version: "1.1.0"};
 
 dv.array = function(n) {
     var a = Array(n);
@@ -74,20 +74,128 @@ dv.table = function(input)
     var table = []; // the data table
     
     table.addColumn = function(name, values, type, iscolumn) {
+        var compress,    // Flag for compressed type of columns
+            j,           // Loop counter
+            len,         // Loop length
+            isMultiple,  // Flag for multiple values
+            rows = [],   // Array of rows (the elements)
+            vals;        // Array of values
+
         type = type || dv.type.unknown;
-        var compress = (type === dv.type.nominal || type === dv.type.ordinal);
-        var vals = values;
-        
-        if (compress && !iscolumn) {
+        compress = (type === dv.type.nominal || type === dv.type.ordinal);
+        vals = values;
+
+        if (!iscolumn) {
             vals = [];
-            vals.lut = code(values);
-            for (var i = 0, map=dict(vals.lut); i < values.length; ++i) {
-                vals.push(map[values[i]]);
+
+            // Loop values to normalize them and separate multiple values
+            // There is a value for each row (even if 2 rows have the same value)
+            len = values.length;
+            for (j = 0; j < len; j += 1) {
+                value = values[j];   // Get current Value
+                isMultiple = false;  // Update flag for multiple values
+
+                // If type is not numeric, replace null and undefined values with the empty string
+                if (type !== dv.type.numeric && (typeof value === 'undefined' || value === null)) {
+                    value = nullStringValue;
+                } else {
+                    // Check if the value is a String
+                    if (typeof value === 'string') {
+                        // Check if the value is double-quoted to remove quotes
+                        if (value.charAt(0) === '"' && value.charAt(value.length - 1) === '"') {
+                            value = value.substring(1, value.length - 1);
+                            values[j] = value; // Update item in the array
+                        } else {
+                            // If the value isn't double-quoted, look for multiple values: check if the value has a comma
+                            if (value.indexOf(',') >= 0) {
+                                isMultiple = true; // Update flag for multiple values
+
+                                // If the value has a comma, split it and save it as an array
+                                singleValues = value.split(',');
+
+                                // Trim all values
+                                singleValues = singleValues.map(function (str) {
+                                    return str.trim();
+                                });
+
+                                // Remove the global multiple value and add the obtained single values in the array of values
+                                values = values.slice(0, j).concat(singleValues).concat(values.slice(j + 1));
+                                j   += singleValues.length - 1; // Update counter of the for loop
+                                len += singleValues.length - 1; // Update length  of the for loop
+                            }
+                        }
+                    }
+                }
+
+                // If the value is not a multiple value, add the row with the value as it is (in the row with index j)
+                // If it is a multiple value, add the array of values
+                // The rows resulting array will be like: [0: 'food', 1: 'dog', 2: ['tree', 'food'], 3: 'food', 4: 'dog']
+                if (!isMultiple) {
+                    rows.push(value);
+                } else {
+                    rows.push(singleValues);
+                }
             }
-            vals.get = function(idx) { return this.lut[this[idx]]; }
-        } else if (!iscolumn) {
-            vals.get = function(idx) { return this[idx]; }
+
+            // Get the array of possible values. It deletes duplicates, so that each value is present exactly one time.
+            // Example: [0: 'tree', 1: 'food', 2: 'dog']
+            vals.lut = code(values);
+
+            // Create a map for possible values (an object that can be used to get the index of a value from the value itself)
+            // Example: { 'tree': 0, 'food': 1, 'dog': 2}
+            map = dict(vals.lut);
+
+            // Loop rows and get for each row the indexes of values
+            len = rows.length;
+            for (j = 0; j < len; j++) {
+                // If the row is an array, the element has a multiple value, so it adds an array with the correspondent values
+                // If it is a single value, it adds only the index of the single correspondent value
+                if (Array.isArray(rows[j])) {
+                    // Get the indexes of correspondent values from the map
+                    rows[j] = rows[j].map(function (singleValue) {
+                        return map[singleValue];
+                    })
+
+                    // Add the array of indexes
+                    vals.push(rows[j]);
+                } else {
+                    // Get the index of the correspondent value from the map and save it
+                    vals.push(map[rows[j]]);
+                }
+            }
+
+            // Define the method to get values from the Column
+            // If the flag requestString is true, it returns a String.
+            // Otherwise it returns the values as they are (they can be arrays for multiple values)
+            vals.get = function(idx, requestString) {
+                var self = this,            // Own reference for inner functions
+                    result,                 // Value to return
+                    valueIndex = this[idx]; // Get the index of the value
+
+                // If it is a single value, return it.
+                // If it is a multiple value, return an array of values.
+                if (!Array.isArray(valueIndex)) {
+                    result = self.lut[valueIndex]; 
+
+                    // If requested, convert the value to string
+                    if (requestString) {
+                        result = result !== null ? result.toString() : result;
+                    }
+                } else {
+                    result = [];
+                    valueIndex.forEach(function (i) {
+                        result.push(self.lut[i]);
+                    });
+
+                    // If requested, join the array separating values with comma
+                    if (requestString) {
+                        result = result.join(', ');
+                    }
+                }
+                return result;
+            }
         }
+
         vals.name = name;
         vals.index = table.length;
         vals.type = type;
@@ -134,16 +242,16 @@ dv.table = function(input)
             cnt, sum, ssq, min, max,            // aggregate values
             _cnt, _sum, _ssq, _min, _max,       // aggregate flags
             ctx = {}, emap = {}, exp = [], lut, // aggregate state vars
-            i = 0, j = 0, k = 0, l = 0, idx = 0, len, slen = sz.length; // indices        
+            i = 0, j = 0, k = 0, l = 0, idx = 0, mv = 0, len, slen = sz.length, mvlen; // indices        
 
         // Identify Requested Aggregates
         var star = false;
         for (i = 0; i < vals.length; ++i) {
             var req = vals[i].init();
             for (expr in req) {
-                if (expr == "*") {
-                    req[expr].map(function(func) {
-                        ctx[func] = dv.array(C);
+                if (expr == "*") { // current val is dv.count()
+                    req[expr].map(function(func) { // req[expr] is ["cnt"]
+                        ctx[func] = dv.array(C);   // Writes the property ctx["cnt"]; - that is the count -> how many elements has this value
                     });
                     star = true;
                 } else {
@@ -159,6 +267,7 @@ dv.table = function(input)
                 }
             }
         }
+
         if (exp.length == 0 && star) { exp.push(-1) };
 
         // Compute Cube Index Coefficients
@@ -176,22 +285,46 @@ dv.table = function(input)
             max = ctx["max_" + expr]; _max = (max !== undefined);
             col = tab[expr];
 outer:            
-            for (i = 0; i < N; ++i) {
-                for (idx = 0, k = 0; k < slen; ++k) {
+            for (i = 0; i < N; ++i) { // Loop all elements (N: number of elements)
+                for (idxes = [], k = 0; k < slen; ++k) { // Loop all dims
                     // compute cube index
-                    l = (hasDims ? dims[k][i] : 0);
+                    l = (hasDims ? dims[k][i] : 0); // Get the index of the value for the current element
                     if (l < 0) continue outer;
-                    idx += p[k] * l;
+
+                    // if the index is an array (multiple value), consider each element
+                    if (Object.prototype.toString.call(l) === '[object Array]') {
+                        mvlen = l.length;
+                        for (mv = 0; mv < mvlen; ++mv) { // Loop all single values of the multiple value
+                            if (typeof idxes[mv] === 'undefined') {
+                                idxes[mv] = 0;           // Initialize it if it doesn't exist
+                            }
+                            idxes[mv] += p[k] * l[mv];   // Get the index of each single value
+                        }
+
+                    // If it is a single value, add it as the first element of the array of indexes
+                    } else {
+                        // Initialize it if it doesn't exist
+                        if (typeof idxes[mv] === 'undefined') {
+                            idxes[0] = 0;
+                        }
+                        idxes[0] += p[k] * l; // Get the index of the value
+                    }
                 }
-                if (col) { v = col[i]; }
-                if (_cnt) { cnt[idx] += 1; }
-                if (_sum) { sum[idx] += v; }
-                if (_ssq) { ssq[idx] += v * v; }
-                if (_min && v < min[idx]) { min[idx] = v; }
-                if (_max && v > max[idx]) { max[idx] = v; }
+
+                // Loop found indexes
+                // (there will be only one index for single values, more indexes for multiple values)
+                mvlen = idxes.length;
+                for (k = 0; k < mvlen; ++k) {
+                    if (col) { v = col[i]; }
+                    if (_cnt) { cnt[idxes[k]] += 1; }
+                    if (_sum) { sum[idxes[k]] += v; }
+                    if (_ssq) { ssq[idxes[k]] += v * v; }
+                    if (_min && v < min[idxes[k]]) { min[idxes[k]] = v; }
+                    if (_max && v > max[idxes[k]]) { max[idxes[k]] = v; }
+                }
             }
         }
-        
+
         // Generate Results
         var result = [], stride = 1, s, val, code = q.code || false;
         for (i = 0; i < dims.length; ++i) {
