@@ -57,7 +57,7 @@ function dv_profile_cache(evt, query) {
     return idx.map(function(j) { return dat[j]; });
 }
 
-// Profiler instace to manage plots and coordinate linked selections
+// Profiler instance to manage plots and coordinate linked selections
 dv.profile = function(data) {
     var g = [],
         add = function(vis) { qdata = null; g.push(vis); return vis; },
